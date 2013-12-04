@@ -13,8 +13,8 @@
 			</h1>
 			<h3>Basic information</h3>
 			<p>
-				<b>Name:</b> <c:out value="${selectedUser.loginName}" />
-				<b>Tenant:</b> <c:out value="${selectedUser.tenant.name}" />
+				<b>Name:</b> <c:out value="${selectedUser.loginName}" /> <br />
+				<b>Tenant:</b> <c:out value="${selectedUser.tenant.name}" /> <br />
 			</p>
 			<h3>Attributes</h3>
 			<c:choose>
@@ -45,7 +45,7 @@
 			</c:choose>
 		</div>
 	</div>
-<!-- 
+	<!-- Assign an attribute to the user -->
 	<div class="row">
 		<div class="col-md-12">
 			<h1 class="page-header">Assign Attribute</h1>
@@ -54,31 +54,32 @@
 	<div class="row">
 		<div class="col-md-12">
 			<form class="form-horizontal" role="form" method="post"
-				action="<c:url value="/users/${tenant.id}/create-impl"/>">
+				action="<c:url value="/attributes/${tenant.id}/${selectedUser.id}/create-impl"/>">
 				<div class="form-group">
-					<label for="input-name" class="col-sm-2 control-label">Username</label>
-					<div class="col-sm-10">
-						<input name="name" class="form-control" id="input-name"
-							placeholder="Name">
-					</div>
+						<label for="input-name" class="col-sm-2 control-label">Attribute family</label>
+						<div class="controls">
+							<select name="familyId">
+								<c:forEach items="${families}" var="family">
+									<option value="${family.id}">${family.name}</option>
+								</c:forEach>
+							</select>
+						</div>
 				</div>
 				<div class="form-group">
-					<label for="input-name" class="col-sm-2 control-label">Password</label>
+					<label for="input-name" class="col-sm-2 control-label">Value</label>
 					<div class="col-sm-10">
-						<input name="password" class="form-control" id="input-name"
-							placeholder="Password">
+						<input name="value" class="form-control" id="input-name"
+							placeholder="Value">
 					</div>
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" class="btn btn-default">Create
-							user</button>
+						<button type="submit" class="btn btn-default">Assign attribute</button>
 					</div>
 				</div>
 			</form>
 		</div>
 	</div>
-	 -->
 </div>
 
 <jsp:include page="../includes/footer.jsp" />

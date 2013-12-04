@@ -2,6 +2,8 @@ package puma.sp.mgmt.tenant.users;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.user.User;
+import puma.sp.mgmt.tenant.MainController;
 import puma.sp.mgmt.tenant.msgs.MessageManager;
+import puma.sp.mgmt.repositories.attribute.AttributeFamilyService;
 import puma.sp.mgmt.repositories.organization.TenantService;
 import puma.sp.mgmt.repositories.user.UserService;
 
@@ -26,23 +30,15 @@ public class UserController {
 	private TenantService tenantService;
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private AttributeFamilyService familyService;
 	
 	@RequestMapping(value = "/users/{tenantId}", method = RequestMethod.GET)
 	public String userOverview(@PathVariable("tenantId") Long tenantId,
-			ModelMap model, HttpSession session) {
+			ModelMap model, HttpSession session, HttpServletRequest request) {
 		Tenant tenant = this.tenantService.findOne(tenantId);
-		if (tenant == null) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not yet authenticated. Please authenticate before performing this operation.");
-			logger.log(Level.WARNING, "User not authenticated.");			
-			return "index";
-		}
-		if (!isAuthorized(session, tenant)) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not authorized to perform this operation.");
-			logger.log(Level.WARNING, "Unauthorized operation caught");
-			return "index";
-		}
+		if (!doCheck(tenant, session))
+			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
 		model.addAttribute("users", this.userService.byTenant(tenant));
 		return "users/show";
 	}
@@ -52,20 +48,10 @@ public class UserController {
 			@PathVariable("tenantId") Long tenantId, 
 			@RequestParam("name") String name,
 			@RequestParam("password") String password,
-			ModelMap model, HttpSession session) {
+			ModelMap model, HttpSession session, HttpServletRequest request) {
 		Tenant tenant = this.tenantService.findOne(tenantId);
-		if (tenant == null) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not yet authenticated. Please authenticate before performing this operation.");
-			logger.log(Level.WARNING, "User not authenticated.");			
-			return "index";
-		}
-		if (!isAuthorized(session, tenant)) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not authorized to perform this operation.");
-			logger.log(Level.WARNING, "Unauthorized operation caught");
-			return "index";
-		}
+		if (!doCheck(tenant, session))
+			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
 		User user = new User();
 		user.setLoginName(name);
 		user.setPassword(password);
@@ -75,24 +61,13 @@ public class UserController {
 		return "redirect:/users/" + tenantId;
 	}
 	
-	@RequestMapping(value = "/users/{tenantId}/{userId}/delete", method = RequestMethod.POST)
+	@RequestMapping(value = "/users/{tenantId}/{userId}/delete")
 	public String deleteUser(
 			@PathVariable("tenantId") Long tenantId, 
 			@PathVariable("userId") Long userId, 
-			ModelMap model, HttpSession session) {
-		Tenant tenant = this.tenantService.findOne(tenantId);
-		if (tenant == null) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not yet authenticated. Please authenticate before performing this operation.");
-			logger.log(Level.WARNING, "User not authenticated.");			
-			return "index";
-		}
-		if (!isAuthorized(session, tenant)) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not authorized to perform this operation.");
-			logger.log(Level.WARNING, "Unauthorized operation caught");
-			return "index";
-		}
+			ModelMap model, HttpSession session, HttpServletRequest request) {
+		if (!doCheck(this.tenantService.findOne(tenantId), session))
+			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
 		User user = this.userService.byId(userId);
 		if (user == null) {
 			MessageManager.getInstance().addMessage(session, "failure",
@@ -106,30 +81,36 @@ public class UserController {
 	@RequestMapping(value = "/users/{tenantId}/info/{userId}", method = RequestMethod.GET)
 	public String showDetails(@PathVariable("tenantId") Long tenantId, 
 			@PathVariable("userId") Long userId, 
-			ModelMap model, HttpSession session) {
-		Tenant tenant = this.tenantService.findOne(tenantId);
-		if (tenant == null) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not yet authenticated. Please authenticate before performing this operation.");
-			logger.log(Level.WARNING, "User not authenticated.");			
-			return "index";
-		}
-		if (!isAuthorized(session, tenant)) {
-			MessageManager.getInstance().addMessage(session, "failure",
-					"You are not authorized to perform this operation.");
-			logger.log(Level.WARNING, "Unauthorized operation caught");
-			return "index";
-		}
+			ModelMap model, HttpSession session, HttpServletRequest request) {
+		if (!doCheck(this.tenantService.findOne(tenantId), session))
+			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
 		User user = this.userService.getUserById(userId);
 		if (user != null) {
 			model.addAttribute("selectedUser", user);
 			model.addAttribute("selectedUserAttributes", user.getAttributes());
+			model.addAttribute("families", this.familyService.findAllOrganizationProvider(this.tenantService.findOne(tenantId)));
 			return "/users/details";
 		} else {
 			MessageManager.getInstance().addMessage(session, "failure",
 					"The user you selected does not exist. Could not show details");
 			return "redirect:/users/" + tenantId; 
 		}		
+	}
+
+	private Boolean doCheck(Tenant tenant, HttpSession session) {
+		if (tenant == null) {
+			MessageManager.getInstance().addMessage(session, "failure",
+					"You are not yet authenticated. Please authenticate before performing this operation.");
+			logger.log(Level.WARNING, "User not authenticated.");			
+			return false;
+		}
+		if (!isAuthorized(session, tenant)) {
+			MessageManager.getInstance().addMessage(session, "failure",
+					"You are not authorized to perform this operation.");
+			logger.log(Level.WARNING, "Unauthorized operation caught");
+			return false;
+		}
+		return true;
 	}
 	
 	private Boolean isAuthorized(HttpSession session, Tenant tenant) {
