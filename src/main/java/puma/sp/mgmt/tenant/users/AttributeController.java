@@ -115,6 +115,9 @@ public class AttributeController {
 		for (Multiplicity next: Multiplicity.values()) 
 			multiplicityValues.add(next.toString());
 		model.addAttribute("multiplicityValues", multiplicityValues);
+		model.addAttribute("msgs",
+    			MessageManager.getInstance().getMessages(session)); 
+		model.addAttribute("tenant", this.tenantService.findOne(tenantId));
 		return "attributes/show";
 	}
 	
@@ -133,7 +136,7 @@ public class AttributeController {
 			Organization tenant = this.tenantService.findOne(tenantId);
 			// Organizations can only remove their own families. The provider can remove all families.
 			if (tenant.equals(family.getDefinedBy()) || tenant.getName().equals(PROVIDER_NAME)) {
-				this.attributeFamilyService.delete(family);
+				this.attributeFamilyService.delete(familyId);
 				MessageManager.getInstance().addMessage(session, "success", "Attribute family '" + family.getName() + "' was successfully removed.");								
 			} else {
 				MessageManager.getInstance().addMessage(session, "failure", "Could not remove attribute family '" + family.getName() + "': you should be from the same organization!");
@@ -182,6 +185,8 @@ public class AttributeController {
 	}
 	
 	private Boolean isAuthorized(HttpSession session, Tenant tenant) {
+		if (!MainController.isAuthenticated(session))
+			return false;
 		// TODO Authorization checks for tenant
 		return true;
 	}

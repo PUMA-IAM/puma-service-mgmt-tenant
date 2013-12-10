@@ -18,6 +18,7 @@
 						<thead>
 							<tr>
 								<th>Family</th>
+								<th>XACML representation</th>
 								<th>Datatype</th>
 								<th>Multiplicity</th>
 								<th>Defined By</th>
@@ -29,6 +30,7 @@
 								varStatus="status">
 								<tr>
 									<td><c:out value="${family.name}" /></td>
+									<td><c:out value="${family.xacmlIdentifier}" /></td>
 									<td><c:out value="${family.dataType}" /></td>
 									<td><c:out value="${family.multiplicity}" /></td>
 									<td><c:out value="${family.definedBy.name}" /></td>
@@ -79,7 +81,7 @@
 				<div class="form-group">
 						<label for="input-name" class="col-sm-2 control-label">Datatype</label>
 						<div class="controls">
-							<select name="datatype">
+							<select name="datatype" class="form-control">
 								<c:forEach items="${datatypes}" var="datatype">
 									<option value="${datatype}">${datatype}</option>
 								</c:forEach>
@@ -89,7 +91,7 @@
 				<div class="form-group">
 						<label for="input-name" class="col-sm-2 control-label">Multiplicity</label>
 						<div class="controls">
-							<select name="multiplicity">
+							<select name="multiplicity" class="form-control">
 								<c:forEach items="${multiplicityValues}" var="multiplicityValue">
 									<option value="${multiplicityValue}">${multiplicityValue}</option>
 								</c:forEach>

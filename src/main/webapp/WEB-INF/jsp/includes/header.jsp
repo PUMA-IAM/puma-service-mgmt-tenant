@@ -40,7 +40,7 @@
 					<span class="icon-bar"></span> <span class="icon-bar"></span> <span
 						class="icon-bar"></span>
 				</button>
-				<a class="navbar-brand" href="<c:url value="/${tenant.id}"/>">PUMA Tenant Management</a>
+				<a class="navbar-brand" href="<c:url value="/${tenant.id}"/>">Service Management</a>
 			</div>
 			<!--
 			<div class="navbar-collapse collapse">
@@ -75,6 +75,20 @@
 			<!-- </div>
 			-->
 			<!--/.nav-collapse -->
+			<c:choose>
+					<c:when test="${empty authenticated}">
+						<div class="navbar-form navbar-right">
+							<a type="submit" class="btn btn-success"
+								href="<c:url value="/login"/>">Log in</a>
+						</div>
+					</c:when>
+					<c:otherwise>
+						<div class="navbar-form navbar-right">
+							<a type="submit" class="btn btn-danger"
+								href="<c:url value="/logout"/>">Log out</a>
+						</div>
+					</c:otherwise>
+				</c:choose>
 		</div>
 	</div>
 

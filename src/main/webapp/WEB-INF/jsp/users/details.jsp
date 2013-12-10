@@ -58,7 +58,7 @@
 				<div class="form-group">
 						<label for="input-name" class="col-sm-2 control-label">Attribute family</label>
 						<div class="controls">
-							<select name="familyId">
+							<select name="familyId" class="form-control">
 								<c:forEach items="${families}" var="family">
 									<option value="${family.id}">${family.name}</option>
 								</c:forEach>

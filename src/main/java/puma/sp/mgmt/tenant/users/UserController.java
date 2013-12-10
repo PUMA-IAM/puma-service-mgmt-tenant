@@ -1,5 +1,8 @@
 package puma.sp.mgmt.tenant.users;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import puma.sp.mgmt.model.attribute.Attribute;
+import puma.sp.mgmt.model.attribute.AttributeFamily;
+import puma.sp.mgmt.model.attribute.Multiplicity;
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.user.User;
 import puma.sp.mgmt.tenant.MainController;
@@ -39,7 +45,10 @@ public class UserController {
 		Tenant tenant = this.tenantService.findOne(tenantId);
 		if (!doCheck(tenant, session))
 			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
+		model.addAttribute("tenant", tenant);
 		model.addAttribute("users", this.userService.byTenant(tenant));
+		model.addAttribute("msgs",
+    			MessageManager.getInstance().getMessages(session)); 
 		return "users/show";
 	}
 	
@@ -86,15 +95,28 @@ public class UserController {
 			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
 		User user = this.userService.getUserById(userId);
 		if (user != null) {
+			model.addAttribute("msgs",
+	    			MessageManager.getInstance().getMessages(session)); 
+			model.addAttribute("tenant", this.tenantService.findOne(tenantId));
 			model.addAttribute("selectedUser", user);
 			model.addAttribute("selectedUserAttributes", user.getAttributes());
-			model.addAttribute("families", this.familyService.findAllOrganizationProvider(this.tenantService.findOne(tenantId)));
+			model.addAttribute("families", this.getEligibleFamilies(user.getAttributes(), this.familyService.findAllOrganizationProvider(this.tenantService.findOne(tenantId))));
 			return "/users/details";
 		} else {
 			MessageManager.getInstance().addMessage(session, "failure",
 					"The user you selected does not exist. Could not show details");
 			return "redirect:/users/" + tenantId; 
 		}		
+	}
+
+	private List<AttributeFamily> getEligibleFamilies(Set<Attribute> attributes,
+			List<AttributeFamily> families) {
+		List<AttributeFamily> result = new ArrayList<AttributeFamily>(families.size());
+		result.addAll(families);
+		for (Attribute next: attributes) 
+			if (next.getFamily().getMultiplicity() == Multiplicity.ATOMIC && result.contains(next.getFamily()))
+				result.remove(next.getFamily());
+		return result;
 	}
 
 	private Boolean doCheck(Tenant tenant, HttpSession session) {
@@ -114,6 +136,8 @@ public class UserController {
 	}
 	
 	private Boolean isAuthorized(HttpSession session, Tenant tenant) {
+		if (!MainController.isAuthenticated(session))
+			return false;
 		// TODO Authorization checks for tenant
 		return true;
 	}

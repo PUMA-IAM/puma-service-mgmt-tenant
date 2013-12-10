@@ -21,10 +21,10 @@
 			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/configuration/${tenant.id}"/>">Configuration &raquo;</a>
 		</div>
 		<div class="col-md-4">
-			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/policy/${tenant.id}"/>">Policy management &raquo;</a>
+			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/policy/${tenant.id}"/>">Policies &raquo;</a>
 		</div>
 		<div class="col-md-4">
-			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/subtenants/${tenant.id}"/>">Subtenant management &raquo;</a>
+			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/configuration/info/${tenant.id}"/>">Subtenants &raquo;</a>
 		</div>
 	</div>
 	<div class="row">
@@ -34,13 +34,13 @@
 	</div>
 	<div class="row">
 		<div class="col-md-4">
-			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/users/${tenant.id}"/>">Manage users &raquo;</a>
+			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/users/${tenant.id}"/>">Users &raquo;</a>
 		</div>
 		<div class="col-md-4">
-			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/attributes/${tenant.id}"/>">New attribute family &raquo;</a>
+			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/attributes/${tenant.id}"/>">Attribute families &raquo;</a>
 		</div>
 		<div class="col-md-4">
-			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/groups/${tenant.id}"/>">Group management &raquo;</a>
+			<a class="btn btn-default btn-lg" role="button" href="<c:url value="/groups/${tenant.id}"/>">Groups &raquo;</a>
 		</div>
 	</div>
 </div>
