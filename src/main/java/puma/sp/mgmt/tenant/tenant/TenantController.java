@@ -1,7 +1,6 @@
 package puma.sp.mgmt.tenant.tenant;
 
 import javax.servlet.http.HttpSession;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -9,7 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.organization.TenantMgmtType;
 import puma.sp.mgmt.model.user.User;
@@ -38,7 +36,8 @@ public class TenantController {
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
 			return "index";
 		}
-		model.addAttribute("tenant", tenant);
+		model.addAttribute("tenant", tenant);		
+		model.addAttribute("managementValues", TenantMgmtType.values());
 		return "configuration/conf";
 	}
 
@@ -57,13 +56,8 @@ public class TenantController {
 			return "redirect:/" + tenantId.toString();
 		}
 		
-		// translate the mgmt type
-		TenantMgmtType realMgmtType = TenantMgmtType.Locally;
-		if(mgmtType == "fedauthn") {
-			realMgmtType = TenantMgmtType.FederatedAuthentication;
-		} else if(mgmtType == "fedauthz") {
-			realMgmtType = TenantMgmtType.FederatedAuthorization;
-		}
+		// translate the mgmt type			
+		TenantMgmtType realMgmtType = TenantMgmtType.valueOf(mgmtType);
 		// change
 		tenant.setManagementType(realMgmtType);
 		tenant.setName(name);

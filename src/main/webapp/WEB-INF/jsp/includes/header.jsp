@@ -78,8 +78,17 @@
 			<c:choose>
 					<c:when test="${empty authenticated}">
 						<div class="navbar-form navbar-right">
-							<a type="submit" class="btn btn-success"
-								href="<c:url value="/login"/>">Log in</a>
+						<c:choose>
+							<c:when test="${empty tenantId}">
+								<a type="submit" class="btn btn-success"
+								href="<c:url value="/login/proceed"/>">Log in</a>
+							</c:when>
+							<c:otherwise>
+								<a type="submit" class="btn btn-success"
+								href="<c:url value="/login/${tenantId}"/>">Log in</a>
+							</c:otherwise>
+						</c:choose>
+							
 						</div>
 					</c:when>
 					<c:otherwise>
