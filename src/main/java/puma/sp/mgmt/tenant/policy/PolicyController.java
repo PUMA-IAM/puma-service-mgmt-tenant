@@ -156,23 +156,7 @@ public class PolicyController {
     	CentralPUMAPDPMgmtRemote centralPUMAPDP = CentralPUMAPDPManager.getInstance().getCentralPUMAPDP();
 		try {
 			centralPUMAPDP.loadTenantPolicy(organization.getId().toString(), policy);
-			logger.info("Succesfully reloaded Central PUMA PDP policy");
-			
-			// Filter out all policies which have already been deployed, and assemble policies for tenant which do not yet have any deployed policies
-			if (!centralPUMAPDP.getIdentifiers().containsAll(this.getTenantsWithPolicy())) {
-				List<String> tmp = new ArrayList<String>(this.getTenantsWithPolicy().size());
-				tmp.addAll(this.getTenantsWithPolicy());
-				tmp.retainAll(centralPUMAPDP.getIdentifiers());
-				List<String> toDeploy = new ArrayList<String>();
-				toDeploy.addAll(this.getTenantsWithPolicy());
-				toDeploy.removeAll(tmp);
-				List<String> assembledPolicies = new ArrayList<String>(toDeploy.size());
-				for (String next: toDeploy) {
-					assembledPolicies.add(this.assemblePolicy(this.tenantService.byName(next)));
-				}
-				centralPUMAPDP.submitTenantPolicies(toDeploy, assembledPolicies);
-			}
-				
+			logger.info("Succesfully reloaded Central PUMA PDP policy");	
     		MessageManager.getInstance().addMessage(session, "success", "Policy loaded into Central PUMA PDP.");
 		} catch (RemoteException e) {
 			MessageManager.getInstance().addMessage(session, "warning", e.getMessage());
@@ -183,14 +167,6 @@ public class PolicyController {
 		}
     }
     
-    private List<String> getTenantsWithPolicy() {
-		List<String> result = new ArrayList<String>();
-		for (Policy next: this.policyRep.findAll())
-			if (!result.contains(next.getDefiningOrganization().getName()))
-				result.add(next.getDefiningOrganization().getName());
-		return result;
-	}
-
 	/**
      * Assemble all 'sub' policies into a single policy set with description
      * @param organization The tenant to construct the policy set for
