@@ -1,5 +1,7 @@
 package puma.sp.mgmt.tenant.users;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -61,12 +63,18 @@ public class UserController {
 		Tenant tenant = this.tenantService.findOne(tenantId);
 		if (!doCheck(tenant, session))
 			return "redirect:" + MainController.AUTHENTICATION_URL + "?RelayState=" + request.getRequestURL().toString();
-		User user = new User();
-		user.setLoginName(name);
-		user.setPassword(password);
-		user.setTenant(tenant);
-		this.userService.addUser(user);
-		MessageManager.getInstance().addMessage(session, "success", "User with loginname " + name + " has been created.");
+		try {
+			User user = new User();
+			user.setLoginName(name);
+			user.setPassword(password);
+			user.setTenant(tenant);
+			this.userService.addUser(user);
+			MessageManager.getInstance().addMessage(session, "success", "User with loginname " + name + " has been created.");
+		} catch (NoSuchAlgorithmException e) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not create user: " + e.getMessage());
+		} catch (InvalidKeySpecException e) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not create user: " + e.getMessage());
+		}
 		return "redirect:/users/" + tenantId;
 	}
 	

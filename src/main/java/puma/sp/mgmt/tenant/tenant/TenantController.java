@@ -1,5 +1,8 @@
 package puma.sp.mgmt.tenant.tenant;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -90,18 +93,25 @@ public class TenantController {
 			model.addAttribute("tenant", tenant);
 			return "redirect:/configuration/info/" + tenant.getId().toString();
 		}
-		// Construct tenant
-		Tenant subtenant = new Tenant(tenantName, TenantMgmtType.Locally, "", "", "", "");
-		subtenant.setSuperTenant(tenant);
-		this.tenantService.addTenant(subtenant);
-		// Construct user
-		User administrator = new User();
-		administrator.setLoginName(loginName);
-		administrator.setPassword(password);
-		administrator.setTenant(subtenant);
-		this.userService.addUser(administrator);
+		try {
+			// Construct tenant
+			Tenant subtenant = new Tenant(tenantName, TenantMgmtType.Locally, "", "", "", "");
+			subtenant.setSuperTenant(tenant);
+			// Construct user
+			User administrator = new User();
+			administrator.setLoginName(loginName);
+			administrator.setTenant(subtenant);
+			administrator.setPassword(password);
+			// Persist
+			this.tenantService.addTenant(subtenant);
+			this.userService.addUser(administrator);
+			MessageManager.getInstance().addMessage(session, "success", "Subtenant successfully created.");
+		} catch (NoSuchAlgorithmException e) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not create user: " + e.getMessage() + " The tenant will not be created.");
+		} catch (InvalidKeySpecException e) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not create user: " + e.getMessage() + " The tenant will not be created.");
+		}
 		// Redirect back
-		MessageManager.getInstance().addMessage(session, "success", "Subtenant successfully created.");
 		return "redirect:/configuration/info/" + tenantId.toString();
 	}
 	
