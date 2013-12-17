@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+
 import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.policy.Policy;
@@ -187,9 +190,9 @@ public class PolicyController {
 		"	<Target>\n" + 
 		"		<Subjects>\n" + 
 		"		    <Subject>\n" + 
-		"			    <SubjectMatch MatchId=\"urn:oasis:names:tc:xacml:1.0:function:integer-equal\">\n" + 
-		"			      <AttributeValue DataType=\"http://www.w3.org/2001/XMLSchema#integer\">" + organization.getId().toString() + "</AttributeValue>\n" + 
-		"				    <SubjectAttributeDesignator AttributeId=\"subject:tenant\" DataType=\"http://www.w3.org/2001/XMLSchema#integer\"/>\n" + 
+		"			    <SubjectMatch MatchId=\"urn:oasis:names:tc:xacml:1.0:function:string-equal\">\n" + 
+		"			      <AttributeValue DataType=\"http://www.w3.org/2001/XMLSchema#string\">" + organization.getId().toString() + "</AttributeValue>\n" + 
+		"				    <SubjectAttributeDesignator AttributeId=\"subject:tenant\" DataType=\"http://www.w3.org/2001/XMLSchema#string\"/>\n" + 
 		"			    </SubjectMatch>\n" + 
 		"		    </Subject>\n" + 
 		"	    </Subjects>\n" + 
