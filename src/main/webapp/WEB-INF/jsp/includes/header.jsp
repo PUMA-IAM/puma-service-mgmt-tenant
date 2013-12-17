@@ -80,11 +80,11 @@
 						<div class="navbar-form navbar-right">
 						<c:choose>
 							<c:when test="${empty tenantId}">
-								<a type="submit" class="btn btn-success"
+								<a type="submit" class="btn btn-primary"
 								href="<c:url value="/login/proceed"/>">Log in</a>
 							</c:when>
 							<c:otherwise>
-								<a type="submit" class="btn btn-success"
+								<a type="submit" class="btn btn-primary"
 								href="<c:url value="/login/${tenantId}"/>">Log in</a>
 							</c:otherwise>
 						</c:choose>
@@ -93,7 +93,7 @@
 					</c:when>
 					<c:otherwise>
 						<div class="navbar-form navbar-right">
-							<a type="submit" class="btn btn-danger"
+							<a type="submit" class="btn btn-primary"
 								href="<c:url value="/logout"/>">Log out</a>
 						</div>
 					</c:otherwise>

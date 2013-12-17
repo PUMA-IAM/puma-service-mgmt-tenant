@@ -8,13 +8,15 @@
 <div class="container">
 	<div class="row">
 		<div class="col-md-12">
-			<h1 class="page-header">
-				<c:out value="User details" />
-			</h1>
+			<h1 class="page-header">User details</h1>
 			<h3>Basic information</h3>
 			<p>
-				<b>Name:</b> <c:out value="${selectedUser.loginName}" /> <br />
-				<b>Tenant:</b> <c:out value="${selectedUser.tenant.name}" /> <br />
+				<b>Name:</b>
+				<c:out value="${selectedUser.loginName}" />
+			</p>
+			<p>
+				<b>Tenant:</b>
+				<c:out value="${selectedUser.tenant.name}" />
 			</p>
 			<h3>Attributes</h3>
 			<c:choose>
@@ -35,8 +37,8 @@
 									<td><c:out value="${attribute.family.name}" /></td>
 									<td><c:out value="${attribute.value}" /></td>
 									<td><a class="btn btn-danger btn-sm"
-													href="<c:url value="/attributes/${tenant.id}/${selectedUser.id}/${attribute.id}/delete"/>"><span
-															class="glyphicon glyphicon-chevron-right"></span> Delete</a></td>
+										href="<c:url value="/attributes/${tenant.id}/${selectedUser.id}/${attribute.id}/delete"/>"><span
+											class="glyphicon glyphicon-chevron-right"></span> Delete</a></td>
 								</tr>
 							</c:forEach>
 						</tbody>
@@ -56,14 +58,15 @@
 			<form class="form-horizontal" role="form" method="post"
 				action="<c:url value="/attributes/${tenant.id}/${selectedUser.id}/create-impl"/>">
 				<div class="form-group">
-						<label for="input-name" class="col-sm-2 control-label">Attribute family</label>
-						<div class="controls">
-							<select name="familyId" class="form-control">
-								<c:forEach items="${families}" var="family">
-									<option value="${family.id}">${family.name}</option>
-								</c:forEach>
-							</select>
-						</div>
+					<label for="input-name" class="col-sm-2 control-label">Attribute
+						family</label>
+					<div class="col-sm-10">
+						<select name="familyId" class="form-control">
+							<c:forEach items="${families}" var="family">
+								<option value="${family.id}">${family.name}</option>
+							</c:forEach>
+						</select>
+					</div>
 				</div>
 				<div class="form-group">
 					<label for="input-name" class="col-sm-2 control-label">Value</label>
@@ -74,7 +77,8 @@
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
-						<button type="submit" class="btn btn-default">Assign attribute</button>
+						<button type="submit" class="btn btn-default">Assign
+							attribute</button>
 					</div>
 				</div>
 			</form>

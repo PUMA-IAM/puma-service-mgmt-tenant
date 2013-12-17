@@ -80,7 +80,7 @@
 				</div>
 				<div class="form-group">
 						<label for="input-name" class="col-sm-2 control-label">Datatype</label>
-						<div class="controls">
+						<div class="col-sm-10">
 							<select name="datatype" class="form-control">
 								<c:forEach items="${datatypes}" var="datatype">
 									<option value="${datatype}">${datatype}</option>
@@ -90,7 +90,7 @@
 				</div>				
 				<div class="form-group">
 						<label for="input-name" class="col-sm-2 control-label">Multiplicity</label>
-						<div class="controls">
+						<div class="col-sm-10">
 							<select name="multiplicity" class="form-control">
 								<c:forEach items="${multiplicityValues}" var="multiplicityValue">
 									<option value="${multiplicityValue}">${multiplicityValue}</option>
