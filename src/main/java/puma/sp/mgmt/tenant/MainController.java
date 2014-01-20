@@ -82,6 +82,7 @@ public class MainController {
 		}			
 		model.addAttribute("tenant", tenant);
 		model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+		model.addAttribute("local", tenant.isAuthenticationLocallyManaged());
         return "index";
     }
     

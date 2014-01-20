@@ -133,7 +133,7 @@ public class AttributeController {
 			MessageManager.getInstance().addMessage(session, "failure",
 					"Could not find the attribute family with id " + familyId.toString() + ".");
 		} else {
-			Organization tenant = this.tenantService.findOne(tenantId);
+			Organization tenant = this.organizationService.findOne(tenantId);
 			// Organizations can only remove their own families. The provider can remove all families.
 			if (tenant.equals(family.getDefinedBy()) || tenant.getName().equals(PROVIDER_NAME)) {
 				this.attributeFamilyService.delete(familyId);

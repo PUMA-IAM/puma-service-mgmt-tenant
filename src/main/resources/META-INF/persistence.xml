@@ -9,6 +9,7 @@
 		<class>puma.sp.mgmt.model.attribute.AttributeFamily</class>
 		<class>puma.sp.mgmt.model.user.User</class>
 		<class>puma.sp.mgmt.model.user.SessionRequest</class>
+		<class>puma.sp.mgmt.model.user.Group</class>
 		<class>puma.sp.mgmt.model.organization.Tenant</class>
 		<class>puma.sp.mgmt.model.organization.Organization</class>
 		<class>puma.sp.mgmt.model.policy.Policy</class>

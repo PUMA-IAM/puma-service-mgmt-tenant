@@ -41,13 +41,14 @@ public class TenantController {
 		}
 		model.addAttribute("tenant", tenant);		
 		model.addAttribute("managementValues", TenantMgmtType.values());
+		model.addAttribute("localAuthN", tenant.isAuthenticationLocallyManaged());
+		model.addAttribute("localAuthZ", tenant.isAuthorizationLocallyManaged());
 		return "configuration/conf";
 	}
 
 	@RequestMapping(value = "/configuration/{tenantId}/modify-impl", method = RequestMethod.POST)
 	public String modifyTenant(@PathVariable("tenantId") Long tenantId,
 			@RequestParam("name") String name,
-			@RequestParam("mgmt-type") String mgmtType,
 			@RequestParam(value = "authn-endpoint", defaultValue = "") String authnEndpoint,
 			@RequestParam(value = "attr-endpoint", defaultValue = "") String attrEndpoint,
 			@RequestParam(value = "idp-public-key", defaultValue = "") String idpPublicKey,
@@ -59,15 +60,15 @@ public class TenantController {
 			return "redirect:/" + tenantId.toString();
 		}
 		
-		// translate the mgmt type			
-		TenantMgmtType realMgmtType = TenantMgmtType.valueOf(mgmtType);
 		// change
-		tenant.setManagementType(realMgmtType);
 		tenant.setName(name);
-		tenant.setAuthnRequestEndpoint(authnEndpoint);
-		tenant.setAuthzRequestEndpoint(authzEndpoint);
-		tenant.setAttrRequestEndpoint(attrEndpoint);
-		tenant.setIdentityProviderPublicKey(idpPublicKey);
+		if (!tenant.isAuthenticationLocallyManaged()) {
+			tenant.setAuthnRequestEndpoint(authnEndpoint);
+			tenant.setAttrRequestEndpoint(attrEndpoint);
+			tenant.setIdentityProviderPublicKey(idpPublicKey);
+		}
+		if (!tenant.isAuthorizationLocallyManaged())
+			tenant.setAuthzRequestEndpoint(authzEndpoint);
 		this.tenantRep.saveAndFlush(tenant);
 		
 		// Report
