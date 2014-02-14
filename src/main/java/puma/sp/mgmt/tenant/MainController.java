@@ -4,8 +4,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
+
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.repositories.organization.TenantService;
 import puma.sp.mgmt.tenant.msgs.MessageManager;
@@ -24,9 +27,9 @@ import puma.sp.mgmt.tenant.msgs.MessageManager;
 public class MainController {
 	private static final Logger logger = Logger.getLogger(MainController.class
 			.getName());
-	public static final String AUTHENTICATION_URL = "http://dnetcloud-tomcat:8080/authn/ServiceAccessServlet";
+	public static final String AUTHENTICATION_URL = "http://sis3s-puma:8080/authn/ServiceAccessServlet";
 	private static final Integer MAX_SESSION_DURATION = 2; // Custom session duration
-	private static final String LOGOUT_URL = "http://dnetcloud-tomcat:8080/authn/LogoutServlet";
+	private static final String LOGOUT_URL = "http://sis3s-puma:8080/authn/LogoutServlet";
 	
 	@Autowired
 	private TenantService tenantService;
