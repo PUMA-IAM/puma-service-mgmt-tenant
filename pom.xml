@@ -1,18 +1,19 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>puma-service-mgmt-tenant</groupId>
-  <artifactId>puma-service-mgmt-tenant</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>war</packaging>
-  <name>PUMA Tenant Configuration Service</name>
-  <properties>
-        <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>puma-service-mgmt-tenant</groupId>
+	<artifactId>puma-service-mgmt-tenant</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
+	<name>PUMA Tenant Configuration Service</name>
+	<properties>
+		<endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring.version>3.2.4.RELEASE</spring.version>
-  </properties>
-  
-  
-   <dependencies>
+	</properties>
+
+
+	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -79,7 +80,7 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
-			<version>3.6.10.Final</version>
+			<version>4.2.11.Final</version>
 		</dependency>
 
 		<dependency>
@@ -95,11 +96,17 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-c3p0</artifactId>
+			<version>4.2.11.Final</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20080701</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>puma-service-mgmt</groupId>
 			<artifactId>puma-service-mgmt</artifactId>
@@ -110,31 +117,59 @@
 			<artifactId>puma-central-puma-pdp-rmi-utils</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-  </dependencies>
-  <build>
-        <finalName>PUMA-tenant</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.0</version>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                    <compilerArguments>
-                        <endorseddirs>${endorsed.dir}</endorseddirs>
-                    </compilerArguments>
-                </configuration>
-            </plugin>
+	</dependencies>
+
+
+	<profiles>
+		<profile>
+			<id>local-tomcat</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<tomcat-url>http://localhost:8080/manager/text</tomcat-url>
+				<tomcat-server>mytomcat</tomcat-server>
+			</properties>
+		</profile>
+		<profile>
+			<id>cloud</id>
+			<activation>
+				<property>
+					<name>deploy</name>
+					<value>remote</value>
+				</property>
+			</activation>
+			<properties>
+				<tomcat-url>http://${tomcat-host}:8080/manager/text</tomcat-url>
+				<tomcat-server>${tomcat-server-name}</tomcat-server>
+			</properties>
+		</profile>
+	</profiles>
+
+	<build>
+		<finalName>PUMA-tenant</finalName>
+		<plugins>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>tomcat-maven-plugin</artifactId>
 				<configuration>
-					<url>http://sis3s-puma:8080/manager/text</url>
-					<server>mytomcat</server>
+					<url>${tomcat-url}</url>
+					<server>${tomcat-server}</server>
 					<path>/mgmt/tenant</path>
 				</configuration>
 			</plugin>
-        </plugins>
-    </build>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.1</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+					<compilerArguments>
+						<endorseddirs>${endorsed.dir}</endorseddirs>
+					</compilerArguments>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
