@@ -24,11 +24,11 @@ import puma.sp.mgmt.model.attribute.AttributeFamily;
 import puma.sp.mgmt.model.attribute.Multiplicity;
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.user.User;
-import puma.sp.mgmt.tenant.MainController;
-import puma.sp.mgmt.tenant.msgs.MessageManager;
 import puma.sp.mgmt.repositories.attribute.AttributeFamilyService;
 import puma.sp.mgmt.repositories.organization.TenantService;
 import puma.sp.mgmt.repositories.user.UserService;
+import puma.sp.mgmt.tenant.MainController;
+import puma.sp.mgmt.tenant.msgs.MessageManager;
 
 @Controller
 public class UserController {
@@ -40,6 +40,8 @@ public class UserController {
 	private UserService userService;
 	@Autowired
 	private AttributeFamilyService familyService;
+	@Autowired
+	private HttpServletRequest request;
 	
 	@RequestMapping(value = "/users/{tenantId}", method = RequestMethod.GET)
 	public String userOverview(@PathVariable("tenantId") Long tenantId,

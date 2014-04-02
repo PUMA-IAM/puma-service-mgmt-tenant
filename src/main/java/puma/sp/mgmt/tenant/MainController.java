@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.view.RedirectView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import puma.sp.mgmt.model.organization.Tenant;
@@ -27,9 +28,9 @@ import puma.sp.mgmt.tenant.msgs.MessageManager;
 public class MainController {
 	private static final Logger logger = Logger.getLogger(MainController.class
 			.getName());
-	public static final String AUTHENTICATION_URL = "http://sis3s-puma:8080/authn/ServiceAccessServlet";
+	public static final String AUTHENTICATION_URL = "/authn/ServiceAccessServlet";
 	private static final Integer MAX_SESSION_DURATION = 2; // Custom session duration
-	private static final String LOGOUT_URL = "http://sis3s-puma:8080/authn/LogoutServlet";
+	private static final String LOGOUT_URL = "/authn/LogoutServlet";
 	
 	@Autowired
 	private TenantService tenantService;
@@ -90,7 +91,7 @@ public class MainController {
     }
     
     @RequestMapping(value = "/login/{tenantId}", method = RequestMethod.GET)
-    public String logInRedirect(@PathVariable(value = "tenantId") String tenantId, 
+    public RedirectView logInRedirect(@PathVariable(value = "tenantId") String tenantId, 
     		ModelMap model, HttpSession session, HttpServletRequest request, UriComponentsBuilder builder) {
     	Tenant tenant = null;
     	if (tenantId.isEmpty() || !canParseId(tenantId))
@@ -107,11 +108,11 @@ public class MainController {
     	// If tenant is not available, change call accordingly
 		if (tenant == null) {
 			logger.log(Level.INFO, "Redirecting request for unknown tenant to " + relayState);
-			return "redirect:" + AUTHENTICATION_URL + "?RelayState=" + relayState;
+			return new RedirectView(AUTHENTICATION_URL + "?RelayState=" + relayState);
 		}
 		// Otherwise redirect to correct login page
 		logger.log(Level.INFO, "Redirecting request for tenant " + tenantId + " to " + relayState);
-		return "redirect:" + AUTHENTICATION_URL + "?RelayState=" + relayState + "&Tenant=" + tenantId.toString();
+		return new RedirectView(AUTHENTICATION_URL + "?RelayState=" + relayState + "&Tenant=" + tenantId.toString());
     }
 
 	@RequestMapping(value = "/login-callback", method = RequestMethod.GET)
