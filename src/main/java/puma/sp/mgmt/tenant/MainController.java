@@ -116,7 +116,7 @@ public class MainController {
     }
 
 	@RequestMapping(value = "/login-callback", method = RequestMethod.GET)
-    public String loginCallback(@RequestParam(value = "Tenant", defaultValue = "") String tenantId, 
+    public String loginCallback(@RequestParam(value = "PrimaryTenant", defaultValue = "") String tenantId, 
     		ModelMap model, HttpSession session, HttpServletRequest request) {
     	// Here, we assume that the callback also contains some signature of the authentication service to prove that the authentication was indeed acknowledged by that party
     	// Note that the signature must also verify that the user was authenticated for the particular tenant id.
