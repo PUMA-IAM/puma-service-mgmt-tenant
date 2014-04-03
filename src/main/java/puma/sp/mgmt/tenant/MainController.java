@@ -169,7 +169,7 @@ public class MainController {
     }
 	
 	@RequestMapping(value = "/logout", method = RequestMethod.GET)
-	public String logout(ModelMap model, HttpSession session, HttpServletRequest request, UriComponentsBuilder builder) {
+	public RedirectView logout(ModelMap model, HttpSession session, HttpServletRequest request, UriComponentsBuilder builder) {
 		session.invalidate();
 		String relayState = builder.path("/").build().toString();
     	try {
@@ -177,6 +177,6 @@ public class MainController {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
-		return "redirect:" + LOGOUT_URL + "?RelayState=" + relayState;
+		return new RedirectView(LOGOUT_URL + "?RelayState=" + relayState);
 	}
 }
