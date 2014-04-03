@@ -152,10 +152,16 @@ public class PolicyController {
      */
     private void loadPolicy(Tenant organization, HttpSession session) {
     	String policy;
-    	// 1. reconstruct the complete tenant policy
-    	policy = this.assemblePolicy(organization);    		
+    	Tenant topLevelOrganization = organization;
+    	// NOTE: The current implementation might suffer from concurrency issues
+    	// 1. Find the top level organization, we are going to deploy only the top-level policies (LATER: policy file with reference for each subtenant)
+    	while (topLevelOrganization.getSuperTenant() != null)
+    		topLevelOrganization = topLevelOrganization.getSuperTenant();
     	
-    	// 2. load into Central PUMA PDP 
+    	// 2. reconstruct the complete tenant policy
+    	policy = this.assemblePolicy(topLevelOrganization);    		
+    	
+    	// 3. load into Central PUMA PDP 
     	CentralPUMAPDPMgmtRemote centralPUMAPDP = CentralPUMAPDPManager.getInstance().getCentralPUMAPDP();
 		try {
 			centralPUMAPDP.loadTenantPolicy(organization.getId().toString(), policy);
@@ -199,7 +205,9 @@ public class PolicyController {
 		"	</Target>\n";
 		for (Policy next: this.policyService.getPolicies(organization)) {
 			result = result + next.toXACML() + "\n";
-		}    
+		}
+		for (Tenant next: organization.getSubtenants())
+			result = result + this.assemblePolicy(next) + "\n";
 		return result + "</PolicySet>";
     }
 }

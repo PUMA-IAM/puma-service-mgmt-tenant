@@ -42,7 +42,7 @@
 					<a class="btn btn-default btn-lg" role="button" href="<c:url value="/attributes/${tenant.id}"/>">Attribute families &raquo;</a>
 				</div>
 				<div class="col-md-4">
-					<a class="btn btn-default btn-lg" role="button" href="<c:url value="/groups/${tenant.id}"/>">Groups &raquo;</a>
+					<!-- <a class="btn btn-default btn-lg" role="button" href="<c:url value="/groups/${tenant.id}"/>">Groups &raquo;</a>  -->
 				</div>
 			</div>
 		</c:when>
