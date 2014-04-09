@@ -18,6 +18,7 @@ import puma.sp.mgmt.model.attribute.Attribute;
 import puma.sp.mgmt.model.attribute.AttributeFamily;
 import puma.sp.mgmt.model.attribute.DataType;
 import puma.sp.mgmt.model.attribute.Multiplicity;
+import puma.sp.mgmt.model.attribute.RetrievalStrategy;
 import puma.sp.mgmt.model.organization.Organization;
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.user.User;
@@ -115,6 +116,10 @@ public class AttributeController {
 		for (Multiplicity next: Multiplicity.values()) 
 			multiplicityValues.add(next.toString());
 		model.addAttribute("multiplicityValues", multiplicityValues);
+		List<String> retrievalStrategies = new ArrayList<String>(RetrievalStrategy.values().length);
+		for (RetrievalStrategy next: RetrievalStrategy.values())
+			retrievalStrategies.add(next.toString());
+		model.addAttribute("retrievalStrategies", retrievalStrategies);
 		model.addAttribute("msgs",
     			MessageManager.getInstance().getMessages(session)); 
 		model.addAttribute("tenant", this.tenantService.findOne(tenantId));
@@ -151,6 +156,7 @@ public class AttributeController {
 			@RequestParam("name") String name,
 			@RequestParam("xacmlid") String xacmlIdentifier,
 			@RequestParam("multiplicity") String multiplicity,
+			@RequestParam("retrieval") String retrieval,
 			@RequestParam("datatype") String datatype,
 			ModelMap model, HttpSession session, HttpServletRequest request	
 			) {
@@ -163,6 +169,7 @@ public class AttributeController {
 		family.setMultiplicity(Multiplicity.valueOf(multiplicity));
 		family.setName(name);
 		family.setXacmlIdentifier(xacmlIdentifier);
+		family.setRetrievalStrategy(RetrievalStrategy.valueOf(retrieval));
 		this.attributeFamilyService.add(family);
 		return "redirect:/attributes/" + tenantId.toString();		
 	}

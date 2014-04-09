@@ -21,6 +21,7 @@
 								<th>XACML representation</th>
 								<th>Datatype</th>
 								<th>Multiplicity</th>
+								<th>Retrieval</th>
 								<th>Defined By</th>
 								<th></th>
 							</tr>
@@ -33,6 +34,7 @@
 									<td><c:out value="${family.xacmlIdentifier}" /></td>
 									<td><c:out value="${family.dataType}" /></td>
 									<td><c:out value="${family.multiplicity}" /></td>
+									<td><c:out value="${family.retrievalStrategy}" /></td>
 									<td><c:out value="${family.definedBy.name}" /></td>
 									<td>
 									<c:choose>
@@ -97,7 +99,17 @@
 								</c:forEach>
 							</select>
 						</div>
-				</div>				
+				</div>			
+				<div class="form-group">
+						<label for="input-name" class="col-sm-2 control-label">Retrieval Strategy</label>
+						<div class="col-sm-10">
+							<select name="retrieval" class="form-control">
+								<c:forEach items="${retrievalStrategies}" var="retrievalStrategy">
+									<option value="${retrievalStrategy}">${retrievalStrategy}</option>
+								</c:forEach>
+							</select>
+						</div>
+				</div>					
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
 						<button type="submit" class="btn btn-default">Create
