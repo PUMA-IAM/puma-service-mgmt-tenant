@@ -21,6 +21,7 @@ package puma.sp.mgmt.tenant.policy;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
+import puma.sp.mgmt.model.organization.PolicyLangType;
 import puma.sp.mgmt.model.organization.Tenant;
 import puma.sp.mgmt.model.policy.Policy;
 import puma.sp.mgmt.model.policy.PolicyType;
@@ -48,7 +50,7 @@ import puma.sp.mgmt.tenant.policy.central.CentralPUMAPDPManager;
 @Controller
 public class PolicyController {
 	private static final Logger logger = Logger.getLogger(PolicyController.class.getName()); 
-	private static final String DEFAULT_POLICY_TEXT =
+	private static final String DEFAULT_POLICY_TEXT_XACML =
     		"<Policy xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" \n" + 
     		"          xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" \n" + 
     		"          xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" + 
@@ -65,6 +67,11 @@ public class PolicyController {
     		"		</Condition>\n" + 
     		"	</Rule>\n" + 
     		" </Policy>\n";
+	private static final String DEFAULT_POLICY_TEXT_STAPL =
+			"Policy(\"policy\") := when( true ) apply DenyOverrides to (\n" +
+			"  Rule(\"rule\") := deny iff ( true ),\n" +
+			"  Rule(\"default-permit\") := permit\n" +
+			")";
 	
 	@Autowired
 	private PolicyService policyService;
@@ -81,8 +88,14 @@ public class PolicyController {
     		model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
     		return "index";
     	}
-    	model.addAttribute("policySet", this.assemblePolicy(tenant));
-    	model.addAttribute("skeleton", DEFAULT_POLICY_TEXT);
+    	
+    	if(tenant.getPolicyLanguage() == PolicyLangType.STAPL) {
+    		model.addAttribute("policySet", this.assembleStaplPolicy(tenant));
+    		model.addAttribute("skeleton", DEFAULT_POLICY_TEXT_STAPL);
+    	} else if(tenant.getPolicyLanguage() == PolicyLangType.XACML) {
+    		model.addAttribute("policySet", this.assembleXacmlPolicy(tenant));
+    		model.addAttribute("skeleton", DEFAULT_POLICY_TEXT_XACML);
+    	} else throw new UnsupportedOperationException();
     	model.addAttribute("policies", this.policyService.getPolicies(tenant));
     	model.addAttribute("tenant", tenant);
     	model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
@@ -97,7 +110,7 @@ public class PolicyController {
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
 			return "index";
 		}
-		Policy policy = this.policyRep.findOne(policyId);
+		Policy policy = this.policyRep.findOne(new Policy.Key(policyId, tenant.getPolicyLanguage()));
     	if (policy == null) {
 			MessageManager.getInstance().addMessage(session, "failure", "Could not find policy with id " + policyId);
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
@@ -109,7 +122,7 @@ public class PolicyController {
     }
     
     @RequestMapping(value = "/policy/{tenantId}/{policyId}/delete", method = RequestMethod.GET)
-    public String createPolicy(ModelMap model, HttpSession session,
+    public String deletePolicy(ModelMap model, HttpSession session,
     		@PathVariable("tenantId") Long tenantIdentifier,
     		@PathVariable("policyId") String id) {
     	Tenant tenant = this.tenantService.findOne(tenantIdentifier);
@@ -118,7 +131,7 @@ public class PolicyController {
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
 			return "index";
 		}
-		Policy policy = this.policyRep.findOne(id);
+		Policy policy = this.policyRep.findOne(new Policy.Key(id, tenant.getPolicyLanguage()));
     	if (policy == null) {
 			MessageManager.getInstance().addMessage(session, "failure", "Could not find policy with id " + id);
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
@@ -129,7 +142,7 @@ public class PolicyController {
     		model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
     		return "redirect:/policy/" + tenantIdentifier.toString();    		
     	}
-    	this.policyService.removePolicy(id);
+    	this.policyService.removePolicy(id, tenant.getPolicyLanguage());
 		// process policy (construct the new policy set and add it to the central puma pdp)
     	loadPolicy(tenant, session); // 
     	return "redirect:/policy/" + tenantIdentifier.toString();
@@ -140,15 +153,15 @@ public class PolicyController {
     		@PathVariable("tenantId") Long tenantId, 
     		@RequestParam("id") String id,
 			@RequestParam("policy") String policy) {
-		if (this.policyRep.findOne(id) != null) {
-			MessageManager.getInstance().addMessage(session, "failure", "Could not create policy: id already exists!");
-			return "redirect:/policy/" + tenantId.toString();
-		}
 		Tenant tenant = this.tenantService.findOne(tenantId);
 		if (tenant == null) {
 			MessageManager.getInstance().addMessage(session, "failure", "Could not find tenant with id " + tenantId.toString());
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
 			return "index";
+		}
+		if (this.policyRep.findOne(new Policy.Key(id, tenant.getPolicyLanguage())) != null) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not create policy: id already exists!");
+			return "redirect:/policy/" + tenantId.toString();
 		}
 		// Save the policy
 		Policy newPolicy = new Policy();
@@ -177,11 +190,16 @@ public class PolicyController {
     	while (topLevelOrganization.getSuperTenant() != null)
     		topLevelOrganization = topLevelOrganization.getSuperTenant();
     	
+    	
     	// 2. reconstruct the complete tenant policy
-    	policy = this.assemblePolicy(topLevelOrganization);    		
+    	if(organization.getPolicyLanguage() == PolicyLangType.STAPL)
+    		policy = this.assembleStaplPolicy(topLevelOrganization);  //FIXME generalize for stapl+xacml, update Manager... 
+    	else if(organization.getPolicyLanguage() == PolicyLangType.XACML)
+    		policy = this.assembleXacmlPolicy(topLevelOrganization);
+    	else throw new UnsupportedOperationException();
     	
     	// 3. load into Central PUMA PDP 
-    	CentralPUMAPDPMgmtRemote centralPUMAPDP = CentralPUMAPDPManager.getInstance().getCentralPUMAPDP();
+    	CentralPUMAPDPMgmtRemote centralPUMAPDP = CentralPUMAPDPManager.getInstance().getCentralPUMAPDP(organization.getPolicyLanguage().getName());
 		try {
 			centralPUMAPDP.loadTenantPolicy(organization.getId().toString(), policy);
 			logger.info("Succesfully reloaded Central PUMA PDP policy");	
@@ -200,7 +218,7 @@ public class PolicyController {
      * @param organization The tenant to construct the policy set for
      * @return The XACML representation of the complete policy set applying (only) to the subjects of the specified organization
      */
-    private String assemblePolicy(Tenant organization) {
+    private String assembleXacmlPolicy(Tenant organization) {
     	List<String> policiesToMerge = new ArrayList<String>();
     	for (Policy next: this.policyService.getPolicies(organization)) {
     		policiesToMerge.add(next.toXACML());
@@ -226,7 +244,44 @@ public class PolicyController {
 			result = result + next.toXACML() + "\n";
 		}
 		for (Tenant next: organization.getSubtenants())
-			result = result + this.assemblePolicy(next) + "\n";
+			result = result + this.assembleXacmlPolicy(next) + "\n";
 		return result + "</PolicySet>";
+    }
+    
+    /**
+     * Assemble all 'sub' policies into a single policy set with description
+     * @param organization The tenant to construct the policy set for
+     * @return The XACML representation of the complete policy set applying (only) to the subjects of the specified organization
+     */
+    private String assembleStaplPolicy(Tenant organization) {
+    	List<String> policiesToMerge = new ArrayList<String>();
+    	for (Policy next: this.policyService.getPolicies(organization)) {
+    		policiesToMerge.add(next.toXACML());
+    	}
+		String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (subject.tenant === " + organization.getId().toString() + ") apply DenyOverrides to (\n";
+		
+		{
+			Iterator<Policy> it = this.policyService.getPolicies(organization).iterator();
+			while(it.hasNext()) {
+				Policy next = it.next();
+				if(it.hasNext() || !organization.getSubtenants().isEmpty())
+					result = result + next.getContent() + ",\n";
+				else
+					result = result + next.getContent() + "\n";
+			}
+		}
+		
+		{
+			Iterator<Tenant> it = organization.getSubtenants().iterator();
+			while(it.hasNext()) {
+				Tenant next = it.next();
+				if(it.hasNext())
+					result = result + this.assembleStaplPolicy(next) + ",\n";
+				else
+					result = result + this.assembleStaplPolicy(next) + "\n";
+			}
+		}
+		
+		return result + ")";
     }
 }

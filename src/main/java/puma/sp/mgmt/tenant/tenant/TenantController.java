@@ -115,7 +115,7 @@ public class TenantController {
 		}
 		try {
 			// Construct tenant
-			Tenant subtenant = new Tenant(tenantName, TenantMgmtType.Locally, "", "", "", "");
+			Tenant subtenant = new Tenant(tenantName, TenantMgmtType.Locally, "", "", "", "", tenant.getPolicyLanguage());
 			subtenant.setSuperTenant(tenant);
 			// Construct user
 			User administrator = new User();
