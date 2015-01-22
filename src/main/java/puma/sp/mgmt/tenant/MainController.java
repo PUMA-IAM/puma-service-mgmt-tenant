@@ -134,7 +134,7 @@ public class MainController {
 		return new RedirectView(AUTHENTICATION_URL + "?RelayState=" + relayState + "&Tenant=" + tenantId.toString());
     }
 
-	@RequestMapping(value = "/login-callback", method = RequestMethod.GET)
+	@RequestMapping(value = "/login-callback", method = {RequestMethod.GET, RequestMethod.POST})
     public String loginCallback(@RequestParam(value = "PrimaryTenant", defaultValue = "") String tenantId, 
     		ModelMap model, HttpSession session, HttpServletRequest request) {
     	// Here, we assume that the callback also contains some signature of the authentication service to prove that the authentication was indeed acknowledged by that party
