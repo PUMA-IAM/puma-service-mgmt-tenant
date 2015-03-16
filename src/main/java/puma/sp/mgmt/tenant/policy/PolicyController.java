@@ -164,11 +164,12 @@ public class PolicyController {
 			return "redirect:/policy/" + tenantId.toString();
 		}
 		// Save the policy
-		Policy newPolicy = new Policy();
+		Policy newPolicy = new Policy(id, tenant.getPolicyLanguage(), PolicyType.SINGLETENANT, tenant, policy);
+		/*Policy newPolicy = new Policy();
 		newPolicy.setId(id);	// TODO The id is given by the form, so it might be inconsistent with the id which was put in the policy.
 		newPolicy.setContent(policy);
 		newPolicy.setDefiningOrganization(tenant);
-		newPolicy.setPolicyType(PolicyType.SINGLETENANT);
+		newPolicy.setPolicyType(PolicyType.SINGLETENANT);*/
 		this.policyService.storePolicy(newPolicy);
 		// process policy (construct the new policy set and add it to the central puma pdp)
     	loadPolicy(tenant, session); // 
