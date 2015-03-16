@@ -259,7 +259,7 @@ public class PolicyController {
     	for (Policy next: this.policyService.getPolicies(organization)) {
     		policiesToMerge.add(next.toXACML());
     	}
-		String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (" + organization.getId().toString() + " in subject.tenant) apply DenyOverrides to (\n";
+		String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (\"" + organization.getId().toString() + "\" in subject.tenant) apply DenyOverrides to (\n";
 		
 		{
 			Iterator<Policy> it = this.policyService.getPolicies(organization).iterator();
