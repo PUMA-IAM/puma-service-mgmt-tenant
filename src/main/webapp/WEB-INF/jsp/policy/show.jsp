@@ -23,7 +23,10 @@
 							<c:forEach var="selectedPolicy" items="${policies}"
 								varStatus="status">
 								<tr>
-									<td><c:out value="${selectedPolicy.id}" /></td>
+									<td><label>
+									<input type="checkbox" onchange="checkboxListener.call(this, ${tenant.id}, '${selectedPolicy.id}')" <c:if test="${selectedPolicy.enabled}">checked</c:if> />
+									<c:out value="${selectedPolicy.id}" />
+									</label></td>
 									<td><a class="btn btn-primary btn-sm"
 											href="<c:url value="/policy/${tenant.id}/info/${selectedPolicy.id}"/>"><span
 									class="glyphicon glyphicon-chevron-right"></span> View details</a>
@@ -73,4 +76,9 @@
 	</div>
 </div>
 
+<script type="text/javascript">
+function checkboxListener(tenantId, policyId) {
+	location.href = "/mgmt/tenant/policy/" + tenantId + "/" + policyId + (this.checked ? "/enable" : "/disable")
+}
+</script>
 <jsp:include page="../includes/footer.jsp" />

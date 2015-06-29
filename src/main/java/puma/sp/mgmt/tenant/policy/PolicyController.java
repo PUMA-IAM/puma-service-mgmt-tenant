@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
 import puma.sp.mgmt.model.organization.PolicyLangType;
@@ -147,6 +148,62 @@ public class PolicyController {
     	loadPolicy(tenant, session); // 
     	return "redirect:/policy/" + tenantIdentifier.toString();
     }
+    
+    @RequestMapping(value = "/policy/{tenantId}/{policyId}/enable", method = RequestMethod.GET)
+    public String enablePolicy(ModelMap model, HttpSession session,
+    		@PathVariable("tenantId") Long tenantIdentifier,
+    		@PathVariable("policyId") String id) {
+    	Tenant tenant = this.tenantService.findOne(tenantIdentifier);
+		if (tenant == null) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not find tenant with id " + tenantIdentifier.toString());
+			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+			return "index";
+		}
+		Policy policy = this.policyRep.findOne(new Policy.Key(id, tenant.getPolicyLanguage()));
+    	if (policy == null) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not find policy with id " + id);
+			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+			return "redirect:/policy/" + tenantIdentifier.toString();
+		}
+    	if (!policy.getDefiningOrganization().equals(tenant)) {
+    		MessageManager.getInstance().addMessage(session, "failure", "Could not enable policy with id " + id + ": only possible from the defining tenant");
+    		model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+    		return "redirect:/policy/" + tenantIdentifier.toString();    		
+    	}
+    	policy.setEnabled(true);
+    	this.policyService.storePolicy(policy);
+		// process policy (construct the new policy set and add it to the central puma pdp)
+    	loadPolicy(tenant, session); // 
+    	return "redirect:/policy/" + tenantIdentifier.toString();
+    }
+    
+    @RequestMapping(value = "/policy/{tenantId}/{policyId}/disable", method = RequestMethod.GET)
+    public String disablePolicy(ModelMap model, HttpSession session,
+    		@PathVariable("tenantId") Long tenantIdentifier,
+    		@PathVariable("policyId") String id) {
+    	Tenant tenant = this.tenantService.findOne(tenantIdentifier);
+		if (tenant == null) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not find tenant with id " + tenantIdentifier.toString());
+			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+			return "index";
+		}
+		Policy policy = this.policyRep.findOne(new Policy.Key(id, tenant.getPolicyLanguage()));
+    	if (policy == null) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not find policy with id " + id);
+			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+			return "redirect:/policy/" + tenantIdentifier.toString();
+		}
+    	if (!policy.getDefiningOrganization().equals(tenant)) {
+    		MessageManager.getInstance().addMessage(session, "failure", "Could not disable policy with id " + id + ": only possible from the defining tenant");
+    		model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
+    		return "redirect:/policy/" + tenantIdentifier.toString();    		
+    	}
+    	policy.setEnabled(false);
+    	this.policyService.storePolicy(policy);
+		// process policy (construct the new policy set and add it to the central puma pdp)
+    	loadPolicy(tenant, session); // 
+    	return "redirect:/policy/" + tenantIdentifier.toString();
+    }
 
 	@RequestMapping(value = "/policy/{tenantId}/create-impl", method = RequestMethod.POST)
     public String createPolicy(ModelMap model, HttpSession session,
@@ -220,11 +277,7 @@ public class PolicyController {
      * @return The XACML representation of the complete policy set applying (only) to the subjects of the specified organization
      */
     private String assembleXacmlPolicy(Tenant organization) {
-    	List<String> policiesToMerge = new ArrayList<String>();
-    	for (Policy next: this.policyService.getPolicies(organization)) {
-    		policiesToMerge.add(next.toXACML());
-    	}
-		String result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + 
+    	String result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + 
 		"<PolicySet  xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" \n" + 
 		"            xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" + 
 		"            xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" \n" + 
@@ -242,7 +295,8 @@ public class PolicyController {
 		"	    </Subjects>\n" + 
 		"	</Target>\n";
 		for (Policy next: this.policyService.getPolicies(organization)) {
-			result = result + next.toXACML() + "\n";
+			if(next.isEnabled())
+				result = result + next.toXACML() + "\n";
 		}
 		for (Tenant next: organization.getSubtenants())
 			result = result + this.assembleXacmlPolicy(next) + "\n";
@@ -255,34 +309,36 @@ public class PolicyController {
      * @return The XACML representation of the complete policy set applying (only) to the subjects of the specified organization
      */
     private String assembleStaplPolicy(Tenant organization) {
-    	List<String> policiesToMerge = new ArrayList<String>();
-    	for (Policy next: this.policyService.getPolicies(organization)) {
-    		policiesToMerge.add(next.toXACML());
+    	final List<Policy> policies = this.policyService.getPolicies(organization);
+    	if(organization.getSuperTenant() != null && policies.isEmpty()){
+    		return "";
+    	} else {
+	    	String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (\"" + organization.getId().toString() + "\" in subject.tenant) apply DenyOverrides to (  \n";
+			
+			{
+				Iterator<Policy> it = this.policyService.getPolicies(organization).iterator();
+				while(it.hasNext()) {
+					Policy next = it.next();
+					if(next.isEnabled())
+						result = result + next.getContent() + ",\n";
+				}
+				
+				if(organization.getSubtenants().isEmpty())
+					result = result.substring(0, result.length() - 2) + "\n";
+			}
+			
+			{
+				Iterator<Tenant> it = organization.getSubtenants().iterator();
+				while(it.hasNext()) {
+					Tenant next = it.next();
+					if(it.hasNext())
+						result = result + this.assembleStaplPolicy(next) + ",\n";
+					else
+						result = result + this.assembleStaplPolicy(next) + "\n";
+				}
+			}
+			
+			return result + ")";
     	}
-		String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (\"" + organization.getId().toString() + "\" in subject.tenant) apply DenyOverrides to (\n";
-		
-		{
-			Iterator<Policy> it = this.policyService.getPolicies(organization).iterator();
-			while(it.hasNext()) {
-				Policy next = it.next();
-				if(it.hasNext() || !organization.getSubtenants().isEmpty())
-					result = result + next.getContent() + ",\n";
-				else
-					result = result + next.getContent() + "\n";
-			}
-		}
-		
-		{
-			Iterator<Tenant> it = organization.getSubtenants().iterator();
-			while(it.hasNext()) {
-				Tenant next = it.next();
-				if(it.hasNext())
-					result = result + this.assembleStaplPolicy(next) + ",\n";
-				else
-					result = result + this.assembleStaplPolicy(next) + "\n";
-			}
-		}
-		
-		return result + ")";
     }
 }
