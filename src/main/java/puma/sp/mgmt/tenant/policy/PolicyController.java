@@ -213,6 +213,10 @@ public class PolicyController {
 			model.addAttribute("msgs", MessageManager.getInstance().getMessages(session));
 			return "index";
 		}
+		if(id == null || id.trim().isEmpty()) {
+			MessageManager.getInstance().addMessage(session, "failure", "Could not create policy: id is empty!");
+			return "redirect:/policy/" + tenantId.toString();
+		}
 		if (this.policyRep.findOne(new Policy.Key(id, tenant.getPolicyLanguage())) != null) {
 			MessageManager.getInstance().addMessage(session, "failure", "Could not create policy: id already exists!");
 			return "redirect:/policy/" + tenantId.toString();
