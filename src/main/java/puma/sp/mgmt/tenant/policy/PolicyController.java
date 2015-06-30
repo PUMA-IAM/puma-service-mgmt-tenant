@@ -20,9 +20,7 @@
 package puma.sp.mgmt.tenant.policy;
 
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,7 +33,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
 import puma.sp.mgmt.model.organization.PolicyLangType;
@@ -94,7 +91,7 @@ public class PolicyController {
     		model.addAttribute("policySet", this.assembleStaplPolicy(tenant));
     		model.addAttribute("skeleton", DEFAULT_POLICY_TEXT_STAPL);
     	} else if(tenant.getPolicyLanguage() == PolicyLangType.XACML) {
-    		model.addAttribute("policySet", this.assembleXacmlPolicy(tenant));
+    		model.addAttribute("policySet", this.assembleXacmlPolicy(tenant, true));
     		model.addAttribute("skeleton", DEFAULT_POLICY_TEXT_XACML);
     	} else throw new UnsupportedOperationException();
     	model.addAttribute("policies", this.policyService.getPolicies(tenant));
@@ -253,7 +250,7 @@ public class PolicyController {
     	if(organization.getPolicyLanguage() == PolicyLangType.STAPL)
     		policy = this.assembleStaplPolicy(topLevelOrganization);  //FIXME generalize for stapl+xacml, update Manager... 
     	else if(organization.getPolicyLanguage() == PolicyLangType.XACML)
-    		policy = this.assembleXacmlPolicy(topLevelOrganization);
+    		policy = this.assembleXacmlPolicy(topLevelOrganization, true);
     	else throw new UnsupportedOperationException();
     	
     	// 3. load into Central PUMA PDP 
@@ -274,10 +271,11 @@ public class PolicyController {
 	/**
      * Assemble all 'sub' policies into a single policy set with description
      * @param organization The tenant to construct the policy set for
+     * @param toplevel should be false for recursive calls
      * @return The XACML representation of the complete policy set applying (only) to the subjects of the specified organization
      */
-    private String assembleXacmlPolicy(Tenant organization) {
-    	String result = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + 
+    private String assembleXacmlPolicy(Tenant organization, boolean toplevel) {
+    	String result = (toplevel ? "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" : "") + 
 		"<PolicySet  xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" \n" + 
 		"            xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" + 
 		"            xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" \n" + 
@@ -294,12 +292,34 @@ public class PolicyController {
 		"		    </Subject>\n" + 
 		"	    </Subjects>\n" + 
 		"	</Target>\n";
+    	
+    	boolean hasPolicies = false;
 		for (Policy next: this.policyService.getPolicies(organization)) {
-			if(next.isEnabled())
+			if(next.isEnabled()) {
 				result = result + next.toXACML() + "\n";
+				hasPolicies = true;
+			}
 		}
+		
+		if(!hasPolicies) {
+			final String defaultP = 
+					" <Policy xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" \n" + 
+		    		"          xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" \n" + 
+		    		"          xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" + 
+		    		"          xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http://docs.oasis-open.org/xacml/access_control-xacml-2.0-policy-schema-os.xsd\" \n" + 
+		    		"          xmlns:md=\"urn:mdc:xacml\" \n" + 
+		    		"          PolicyId=\"default-policy\" \n" + 
+		    		"          RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:deny-overrides\">\n" + 
+		    		"	<Description></Description>\n" + 
+		    		"	<Rule RuleId=\"rule:default\" Effect=\"Permit\">\n" + 
+		    		"		<Description></Description>\n" + 
+		    		"	</Rule>\n" + 
+		    		" </Policy>\n";
+			result = result + defaultP;
+		}
+		
 		for (Tenant next: organization.getSubtenants())
-			result = result + this.assembleXacmlPolicy(next) + "\n";
+			result = result + this.assembleXacmlPolicy(next, false) + "\n";
 		return result + "</PolicySet>";
     }
     
@@ -309,36 +329,39 @@ public class PolicyController {
      * @return The XACML representation of the complete policy set applying (only) to the subjects of the specified organization
      */
     private String assembleStaplPolicy(Tenant organization) {
-    	final List<Policy> policies = this.policyService.getPolicies(organization);
-    	if(organization.getSuperTenant() != null && policies.isEmpty()){
-    		return "";
-    	} else {
-	    	String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (\"" + organization.getId().toString() + "\" in subject.tenant) apply DenyOverrides to (  \n";
-			
-			{
-				Iterator<Policy> it = this.policyService.getPolicies(organization).iterator();
-				while(it.hasNext()) {
-					Policy next = it.next();
-					if(next.isEnabled())
-						result = result + next.getContent() + ",\n";
-				}
-				
-				if(organization.getSubtenants().isEmpty())
-					result = result.substring(0, result.length() - 2) + "\n";
-			}
-			
-			{
-				Iterator<Tenant> it = organization.getSubtenants().iterator();
-				while(it.hasNext()) {
-					Tenant next = it.next();
-					if(it.hasNext())
-						result = result + this.assembleStaplPolicy(next) + ",\n";
-					else
-						result = result + this.assembleStaplPolicy(next) + "\n";
+    	String result = "Policy(\"tenantsetid:" + organization.getId().toString() + "\") := when (\"" + organization.getId().toString() + "\" in subject.tenant) apply DenyOverrides to (  \n";
+		
+    	
+		{
+			boolean hasPolicies = false;
+			Iterator<Policy> it = this.policyService.getPolicies(organization).iterator();
+			while(it.hasNext()) {
+				Policy next = it.next();
+				if(next.isEnabled()) {
+					result = result + next.getContent() + ",\n";
+					hasPolicies = true;
 				}
 			}
 			
-			return result + ")";
-    	}
+			if(!hasPolicies) {
+				result = result + "Rule(\"default-policy\") := permit" + ",\n";
+			}
+			if(organization.getSubtenants().isEmpty())
+				result = result.substring(0, result.length() - 2) + "\n";
+		}
+		
+		{
+			Iterator<Tenant> it = organization.getSubtenants().iterator();
+			while(it.hasNext()) {
+				Tenant next = it.next();
+				if(it.hasNext())
+					result = result + this.assembleStaplPolicy(next) + ",\n";
+				else
+					result = result + this.assembleStaplPolicy(next) + "\n";
+			}
+		}
+		
+		return result + ")";
     }
+
 }
