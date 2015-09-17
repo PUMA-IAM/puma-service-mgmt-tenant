@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import puma.rest.client.CentralPDPClient;
 import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
 import puma.sp.mgmt.model.organization.PolicyLangType;
 import puma.sp.mgmt.model.organization.Tenant;
@@ -258,15 +259,15 @@ public class PolicyController {
     	else throw new UnsupportedOperationException();
     	
     	// 3. load into Central PUMA PDP 
-    	CentralPUMAPDPMgmtRemote centralPUMAPDP = CentralPUMAPDPManager.getInstance().getCentralPUMAPDP(organization.getPolicyLanguage().getName());
+    	CentralPDPClient centralPUMAPDP = CentralPUMAPDPManager.getInstance().getCentralPUMAPDP(organization.getPolicyLanguage().getName());
 		try {
 			centralPUMAPDP.loadTenantPolicy(organization.getId().toString(), policy);
 			logger.info("Succesfully reloaded Central PUMA PDP policy");	
     		MessageManager.getInstance().addMessage(session, "success", "Policy loaded into Central PUMA PDP.");
-		} catch (RemoteException e) {
+		} /*catch (RemoteException e) {
 			MessageManager.getInstance().addMessage(session, "warning", e.getMessage());
 			logger.log(Level.WARNING, "Error when loading Tenant PUMA PDP policy", e);
-		} catch (NullPointerException e) {
+		}*/ catch (NullPointerException e) {
 			MessageManager.getInstance().addMessage(session, "warning", "Could not deploy policy. Is the PDP available? Please contact your administrator");
 			logger.log(Level.WARNING, "Error when loading Tenant PUMA PDP policy", e);
 		}

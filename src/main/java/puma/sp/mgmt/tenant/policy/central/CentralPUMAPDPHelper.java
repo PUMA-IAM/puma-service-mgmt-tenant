@@ -5,25 +5,25 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
+import puma.rest.client.CentralPDPClient;
 
 public class CentralPUMAPDPHelper {
 
-	private ConcurrentMap<String, CentralPUMAPDPMgmtRemote> pdps = new ConcurrentHashMap<>();
+	private ConcurrentMap<String, CentralPDPClient> pdps = new ConcurrentHashMap<>();
 	
 	public CentralPUMAPDPHelper() {
 		
 	}
 	
-	public void addPDP(String name, CentralPUMAPDPMgmtRemote pdp) {
-		pdps.put(name, pdp);
+	public void addPDP(String name, String baseUrl) {
+		pdps.put(name, new CentralPDPClient(baseUrl, name));
 	}
 	
-	public CentralPUMAPDPMgmtRemote getPDP(String name) {
+	public CentralPDPClient getPDP(String name) {
 		return pdps.get(name);
 	}
 	
-	public Map<String, CentralPUMAPDPMgmtRemote> getAll() {
+	public Map<String, CentralPDPClient> getAll() {
 		return new HashMap<>(pdps);
 	}
 }

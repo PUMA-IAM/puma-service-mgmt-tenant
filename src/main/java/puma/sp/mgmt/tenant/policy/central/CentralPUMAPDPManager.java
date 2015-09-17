@@ -1,15 +1,11 @@
 package puma.sp.mgmt.tenant.policy.central;
 
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import puma.rmi.pdp.mgmt.CentralPUMAPDPMgmtRemote;
+import puma.rest.client.CentralPDPClient;
 import puma.sp.mgmt.model.organization.PolicyLangType;
 
 public class CentralPUMAPDPManager {
@@ -19,13 +15,13 @@ public class CentralPUMAPDPManager {
 
 	private static final String CENTRAL_PUMA_PDP_HOST_XACML = "puma-central-puma-pdp";
 
-	private static final String CENTRAL_PUMA_PDP_RMI_NAME_XACML = "central-puma-pdp";
+	//private static final String CENTRAL_PUMA_PDP_RMI_NAME_XACML = "central-puma-pdp";
 
 	private static final String CENTRAL_PUMA_PDP_HOST_STAPL = "puma-central-puma-pdp-stapl";
 
-	private static final String CENTRAL_PUMA_PDP_RMI_NAME_STAPL = "central-puma-pdp-stapl";
+	//private static final String CENTRAL_PUMA_PDP_RMI_NAME_STAPL = "central-puma-pdp-stapl";
 	
-	private static final int CENTRAL_PUMA_PDP_RMI_PORT = 2040;
+	private static final String CENTRAL_PUMA_PDP_PORT = "8080";
 	
 	/**********************
 	 * SINGLETON STUFF
@@ -46,16 +42,16 @@ public class CentralPUMAPDPManager {
 
 	private CentralPUMAPDPHelper pdpHelper = new CentralPUMAPDPHelper();
 	
-	public CentralPUMAPDPMgmtRemote getCentralPUMAPDP(String langType) {
+	public CentralPDPClient getCentralPUMAPDP(String langType) {
 		return this.pdpHelper.getPDP(langType);
 	}
 	
 	public CentralPUMAPDPManager() {
-		initConnection(CENTRAL_PUMA_PDP_HOST_XACML, CENTRAL_PUMA_PDP_RMI_PORT, CENTRAL_PUMA_PDP_RMI_NAME_XACML, PolicyLangType.XACML.name());
-		initConnection(CENTRAL_PUMA_PDP_HOST_STAPL, CENTRAL_PUMA_PDP_RMI_PORT, CENTRAL_PUMA_PDP_RMI_NAME_STAPL, PolicyLangType.STAPL.name());
+		pdpHelper.addPDP(PolicyLangType.XACML.name(), CENTRAL_PUMA_PDP_HOST_XACML + ":" + CENTRAL_PUMA_PDP_PORT);
+		pdpHelper.addPDP(PolicyLangType.STAPL.name(), CENTRAL_PUMA_PDP_HOST_STAPL + ":" + CENTRAL_PUMA_PDP_PORT);
 	}
 
-	private void initConnection(final String host, final int port, final String rmiName, final String langType) {
+	/*private void initConnection(final String host, final int port, final String rmiName, final String langType) {
 		if (! setupCentralPUMAPDPConnection(host, port, rmiName, langType)) {
 			logger.info("Retrying to reach the Registry periodically");
 			// retry periodically
@@ -84,13 +80,13 @@ public class CentralPUMAPDPManager {
 			});
 			thread.start();
 		}
-	}
+	}*/
 
 	/**
 	 * Idempotent helper function to set up the RMI connection to the central
 	 * Application PDP Registry.
 	 */
-	private boolean setupCentralPUMAPDPConnection(String host, int port, String rmiName, String langType) {
+	/*private boolean setupCentralPUMAPDPConnection(String host, int port, String rmiName, String langType) {
 		if (!isCentralPUMAPDPConnectionOK(langType)) { //
 			try {
 				Registry registry = LocateRegistry.getRegistry(
@@ -108,15 +104,15 @@ public class CentralPUMAPDPManager {
 			}
 		}
 		return true;
-	}
+	}*/
 
 	/**
 	 * Helper function that returns whether the RMI connection to the
 	 * Application PDP Registry is set up or not.
 	 */
-	private boolean isCentralPUMAPDPConnectionOK(String langType) {
+	/*private boolean isCentralPUMAPDPConnectionOK(String langType) {
 		return pdpHelper.getPDP(langType) != null;
-	}
+	}*/
 	
 	/***********************
 	 * MANAGEMENT FUNCTIONALITY
@@ -128,7 +124,7 @@ public class CentralPUMAPDPManager {
 	 * @return
 	 */
 	public List<CentralPUMAPDPOverview> getOverview() {
-		Map<String, CentralPUMAPDPMgmtRemote> pdps = pdpHelper.getAll();
+		Map<String, CentralPDPClient> pdps = pdpHelper.getAll();
 		List<CentralPUMAPDPOverview> overview = new ArrayList<>();
 		for(String name : pdps.keySet()) {
 			overview.add(getOverview(pdps, name));
@@ -137,24 +133,37 @@ public class CentralPUMAPDPManager {
 	}
 	
 	
-	private CentralPUMAPDPOverview getOverview(Map<String, CentralPUMAPDPMgmtRemote> pdps, String langType) {
+	private CentralPUMAPDPOverview getOverview(Map<String, CentralPDPClient> pdps, String langType) {
 		String status;
-		if (!this.isCentralPUMAPDPConnectionOK(langType)) {
+		/*if (!this.isCentralPUMAPDPConnectionOK(langType)) {
 			return new CentralPUMAPDPOverview("Could not establish a connection", "", langType);
-		}
+		}*/
 		try {
 			status = pdps.get(langType).getStatus();
-		} catch (RemoteException e) {
-			status = "RemoteException: " + e.getMessage();
+		} catch (Exception e) {
+			status = "Exception: " + e.getMessage();
 		}
 		String policy;
 		try {
 			policy = pdps.get(langType).getCentralPUMAPolicy();
-		} catch (RemoteException e) {
-			policy = "RemoteException: " + e.getMessage();
+		} catch (Exception e) {
+			policy = "Exception: " + e.getMessage();
 		}
 		return new CentralPUMAPDPOverview(status, policy, langType);
 	}
 	
+	/**
+	 * Returns the metrics of the central PUMA PDP as JSON string.
+	 */
+	/*public String getMetrics(String langType) {
+		if (!this.isCentralPUMAPDPConnectionOK(langType)) {
+			return "Could not establish a connection";
+		}
+		try {
+			return pdpHelper.getPDP(langType).getMetrics();
+		} catch(RemoteException e) {
+			return e.getMessage();
+		}
+	}*/
 
 }
